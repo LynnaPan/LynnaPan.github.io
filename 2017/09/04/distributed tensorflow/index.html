@@ -1,0 +1,574 @@
+
+ <!DOCTYPE HTML>
+<html >
+<head>
+  <meta charset="UTF-8">
+  <meta name="baidu_union_verify" content="d1952c66cf48912e21c18c7c581f382a">
+  <meta name="360-site-verification" content="67fbcc5a67f4c65c057315b28fa0b2c8" />
+<meta name="google-site-verification" content="2GzxQ0VtXwTSUdmGm6DzcmhTzM_I9QmzCb_pzpMzD88" />
+  
+    <title>分布式tensorflow（一） | Lynna&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=3, minimum-scale=1">
+    
+    <meta name="author" content="Lina Pan(panlina_lynna@outlook.com)">
+    
+    <meta name="description" content="前言在了解分布式tensorflow的时候，首先需要了解tensorflow的一些基本概念。Tensorflow是一个基于图的计算系统，其主要应用于机器学习。
+从Tensorflow名字的字面意思可以拆分成两部分来理解：Tensor+flow。
+
+Tensor：中文名可以称为“张量”，其本质就是任意">
+    
+    
+    
+    
+    <link rel="alternate" href="atom.xml" title="Lynna&#39;s Blog" type="application/atom+xml">
+    
+    
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+    <script>
+        var _hmt = _hmt || [];
+        (function() {
+            var hm = document.createElement("script");
+            var _bdId ='391982416296a0d54221f59fe35250d4';
+             hm.src = "//hm.baidu.com/hm.js?" + _bdId;
+             var s = document.getElementsByTagName("script")[0]; 
+             s.parentNode.insertBefore(hm, s);
+        })();
+    </script>
+     
+</head>
+
+  <body>
+    <header>
+      <div>
+		
+			<div id="textlogo">
+				<h1 class="site-name"><a href="/" title="Lynna&#39;s Blog">Lynna&#39;s Blog</a></h1>
+				<a class="blog-motto">怕什么真理无穷， 进一寸有一寸的欢喜</a>
+			</div>
+			<div class="navbar"><a class="navbutton navmobile" href="#" title="Menu">
+			</a></div>
+			<nav class="animated">
+				<ul>
+					<ul>
+					 
+						<li><a href="/">首页</a></li>
+					
+						<li><a href="/archives">归档</a></li>
+					
+					<li>
+					
+                                            <form class="search" action=https://lynnapan.github.io/ target="_blank">
+                                            <label>Search</label>
+                                        <input name="s" type="hidden" value= null ><input type="text" name="q" size="30" placeholder="Search"><br>
+					
+					</li>
+				</ul>
+                            </nav>			
+</div>
+
+    </header>
+    <div id="container">
+      <div id="main" class="post" itemscope itemprop="blogPost">
+	<article itemprop="articleBody"> 
+		<header class="article-info clearfix">
+  <h1 itemprop="name">
+    
+      <a href="/2017/09/04/distributed tensorflow/" title="分布式tensorflow（一）" itemprop="url">分布式tensorflow（一）</a>
+  </h1>
+  <p class="article-author">By
+    
+      <a href="https://lynnapan.github.io" title="Lina Pan(panlina_lynna@outlook.com)">Lina Pan(panlina_lynna@outlook.com)</a>
+    </p>
+  <p class="article-time">
+    <time datetime="2017-09-04T06:53:53.000Z" itemprop="datePublished">2017-09-04</time>
+    Updated:<time datetime="2017-09-26T12:45:13.000Z" itemprop="dateModified">2017-09-26</time>
+    
+  </p>
+</header>
+	<div class="article-content">
+		
+		
+		<div id="toc" class="toc-article">
+			<strong class="toc-title">Contents</strong>
+		<ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#分布式tensorflow的主要概念"><span class="toc-number">2.</span> <span class="toc-text">分布式tensorflow的主要概念</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#分布式资源放置管理"><span class="toc-number">3.</span> <span class="toc-text">分布式资源放置管理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#一-模型复制（replicating）"><span class="toc-number">3.1.</span> <span class="toc-text">一. 模型复制（replicating）</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#In-graph-replication"><span class="toc-number">3.1.1.</span> <span class="toc-text">In-graph replication</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Between-graph-replication"><span class="toc-number">3.1.2.</span> <span class="toc-text">Between-graph replication</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#二-根据参数放置设备（Device-placement-for-Variables）"><span class="toc-number">3.2.</span> <span class="toc-text">二. 根据参数放置设备（Device placement for Variables）</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Round-robin-variables"><span class="toc-number">3.2.1.</span> <span class="toc-text">Round-robin variables</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Load-balancing-variables"><span class="toc-number">3.2.2.</span> <span class="toc-text">Load balancing variables</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Partitioned-variables"><span class="toc-number">3.2.3.</span> <span class="toc-text">Partitioned variables</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#三-进程和主服务（Session-and-Servers）"><span class="toc-number">3.3.</span> <span class="toc-text">三. 进程和主服务（Session and Servers）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#四-容错性（Fault-tolerance）"><span class="toc-number">3.4.</span> <span class="toc-text">四. 容错性（Fault tolerance）</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Saver"><span class="toc-number">3.4.1.</span> <span class="toc-text">Saver</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#容错性"><span class="toc-number">3.4.2.</span> <span class="toc-text">容错性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Fault-tolerance-的API"><span class="toc-number">3.4.3.</span> <span class="toc-text">Fault tolerance 的API</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#总结"><span class="toc-number">4.</span> <span class="toc-text">总结</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Further-reading"><span class="toc-number">4.1.</span> <span class="toc-text">Further reading:</span></a></li></ol></li></ol>
+		</div>
+		
+		<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在了解分布式tensorflow的时候，首先需要了解tensorflow的一些基本<a href="https://www.tensorflow.org/get_started/get_started" target="_blank" rel="external">概念</a>。<br>Tensorflow是一个基于图的计算系统，其主要应用于机器学习。</p>
+<p>从Tensorflow名字的字面意思可以拆分成两部分来理解：Tensor+flow。</p>
+<ul>
+<li>Tensor：中文名可以称为“张量”，其本质就是任意维度的数组。一个向量就是一个1维的Tensor，一个矩阵就是2维的Tensor。</li>
+<li>Flow：指的就是图计算中的数据流。</li>
+</ul>
+<p>当我们想要使用Tensorflow做什么事情的时候，一般需要三个操作步骤：</p>
+<ol>
+<li>创建Tensor；</li>
+<li>添加Operations（Operations输入Tensor，然后输出另一个Tensor）；</li>
+<li>执行计算（也就是运行一个可计算的图）。</li>
+</ol>
+<p>Tensorflow有个图的概念。</p>
+<blockquote>
+<p>A data flow graph representing a TensorFlow computation. </p>
+</blockquote>
+<p>Operations会添加到图中，作为图的节点。在添加某Operation的时候，不会立即执行该Operation。Tensorflow会等待所有Operation添加完毕，然后Tensorflow会优化该计算图，以便决定如何执行计算。<br><img src="/images/tensorflow/6.png" alt=""></p>
+<p>分布式tensorflow是一个很有意思的idea，分布式系统能帮我们在网络带宽一定的情况下做很多性能的扩展，如Hadoop分布式计算平台，它采用分布式存储的方式来提高读写速度和扩大存储容量。那么distributed tensorflow可以利用分布式来更好的并行利用大量的计算资源来实现数据并行，提高数据吞吐率以及training的速度。整理了一份tensorflow devsubmit的资料以及distributed tensorflow的学习笔记。</p>
+<p>这是一篇OSDI的论文中提到的用分布式tensorflow来并行计算和训练模型，从25个GPU，扩展到200个GPU，数据的吞吐量也从500不到，显著提高到2000以上。<br><img src="/images/tensorflow/1.PNG" alt=""></p>
+<center>图1</center>
+
+<h2 id="分布式tensorflow的主要概念"><a href="#分布式tensorflow的主要概念" class="headerlink" title="分布式tensorflow的主要概念"></a>分布式tensorflow的主要概念</h2><p>之前玩了一阵子Kubernetes, 有一次好奇就在K8S上搭了tensorflow并在一个主节点两个子节点的小集群上并行跑了一个小model，那时候只是把tensorflow on K8S跑通了，并没有深刻理解架构上是怎么实现的。要理解分布式tensorflow可以从几个方面自底向上地学习：</p>
+<ul>
+<li>replicating your model(复制化你的模型)</li>
+<li>Device placement for Variables(如何为参数放置训练资源)</li>
+<li>Sessions and Servers(会话和主服务)</li>
+<li>Fault tolerance(容错设计)</li>
+</ul>
+<p>假设我们有一台机器，有CPU设备和GPU设备，我们要在上面跑tensorflow的话，一般用CPU来处理参数，GPU来处理数学计算，如下图所示， 用<code>tf.device</code>来定义每个设备的用途：<br><img src="/images/tensorflow/2.PNG" alt=""></p>
+<center>图2</center>
+
+<p>如果我们多了一台机器，只有CPU，我们想要分别用第一台机器的GPU和第二台机器的CPU来做计算，该怎么做？<br><img src="/images/tensorflow/3.PNG" alt=""></p>
+<center>图3</center>
+
+<p>可以看到上图中的python代码，唯一的区别是<code>tf.device</code>处定义的不同。不同的节点之间通过gRPC通信。</p>
+<h2 id="分布式资源放置管理"><a href="#分布式资源放置管理" class="headerlink" title="分布式资源放置管理"></a>分布式资源放置管理</h2><p>tensorflow的分布式的设计灵感来自于谷歌之前的一个系统——<strong>DisBelief</strong>。Disbelief中有两个明显不同的进程：</p>
+<ul>
+<li>一个是PS(parameter servers): PS负责保存和更新所有模型的状态，也就是参数，并根据后面的梯度下降进行更新参数。</li>
+<li>另一个是worker replicas: Worker则是做集中计算，会计算神经网络的Loss, 并且准确计算梯度。</li>
+</ul>
+<p>那么在tensorflow中，设计者也通过一些设计来模仿这个工作模式。Distributed tensorflow也会有PS tasks和Worker tasks。PS tasks负责处理参数变量和更新参数，下图中剩下的工作就是由Worker来实现，前向传播计算，计算loss，后向传播等。<br><img src="/images/tensorflow/4.PNG" alt=""></p>
+<center>图4</center>
+
+<p>这样看来分布式tensorflow和DisBelief几乎完全一样。它们的最大不同之处在于，在DisBelief中， PS和worker是两个完全不同的程序，而且几乎没有相联，没有共同点，你可以通过完全不同的API来使用它们。</p>
+<p>而在Tensorflow中，PS和worker的运行代码完全相同。它们只是你可以发送一点tensorflow图（graph）的服务器，它会对你定义的图进行反应。这样的设计会带来很大的灵活性。</p>
+<p>举个栗子：我们也可以对一个PS任务添加GPU来加速参数更新计算，或者我们也可以让worker任务做一些本地存储的工作，存一些cache来防止网络堵塞，又或者我们可以把所有的PS都删掉，只留下worker，只要worker之间的通讯网络足够快，这样就非常灵活。但我们实际的应用中，区分PS和worker可以更好地帮助我们训练一些网络。接下来举一些例子，来看看我们怎么做到的。</p>
+<ol>
+<li>replicating your model(复制化你的模型)</li>
+<li>Device placement for Variables(如何为参数放置训练资源)</li>
+<li>Sessions and Servers(会话和主服务)</li>
+<li>Fault tolerance(容错设计)</li>
+</ol>
+<h3 id="一-模型复制（replicating）"><a href="#一-模型复制（replicating）" class="headerlink" title="一. 模型复制（replicating）"></a>一. 模型复制（replicating）</h3><p>当一个model在单机中可以很好实现的时候，replication可以用来加强分布。基本思想是给一个任务复制很多个副本，每个副本都处理不同的数据子集，也就是数据并行处理计算。</p>
+<h4 id="In-graph-replication"><a href="#In-graph-replication" class="headerlink" title="In-graph replication"></a>In-graph replication</h4><p>最简单的一个复制副本的想法叫图内复制（In-graph replication）方法。我们从代码来理解这个方法的实现：</p>
+<ol>
+<li>首先我们在PS任务中添加变量，这个步骤和之前一样</li>
+<li>然后把一批输入数据做split处理，分成等量数据块，在循环地分发给worker tasks</li>
+<li>用tf.device把每个worker task加入子图来计算部分的结果</li>
+<li>最后把结果整合成最后的loss损失，可以用tensorflow优化器进行优化<br><img src="/images/tensorflow/5.PNG" alt=""><center>图5</center>
+
+</li>
+</ol>
+<p>graph内复制思想很简单，也很好实现，不需要修改代码，在少量副本的情况下可以工作得很好，比如利用单机中多个GPU。但当应用在很大的模型时，比如在几百台的机器上运行时，会发现最后的图会变得很大，client之间不能很好地协调工作来建立整个图。因此就提出来另外一个方法————图间复制。</p>
+<h4 id="Between-graph-replication"><a href="#Between-graph-replication" class="headerlink" title="Between-graph replication"></a>Between-graph replication</h4><p>跟上一个想法的不同是，图间复制的思想是让每个worker都创建一个图跑一个很小的图计算，然后把非参数的数据放在本地。当在运行多个client时，由中间的PS task来交互client之间的数据变化。听上去很神奇，实现原理是，当有两个worker task时，会创建两个同样名字的变量，然后放在PS中的内存中共享，当一个worker task更新了变量，那个对于另一个task也是可见的，所以这样可以训练得更快。<br><img src="/images/tensorflow/7.PNG" alt=""></p>
+<center>图6</center>
+
+<p>这种变量共享设计就带来另外一个问题：我们如何选择地址来放置我们的变量？因为上一个例子中只有一个PS task,这样把所有的变量用设备字都放置在一个固定设备中固然可行，但有时我们想要实现多于1个的PS task时候怎么办呢？比如我们想要分配变量更新的工作，或者想平衡worker task来取变量时候的网络负载时，很可能就要用到多个PS任务了。接下来就讨论一下变量的放置问题。</p>
+<h3 id="二-根据参数放置设备（Device-placement-for-Variables）"><a href="#二-根据参数放置设备（Device-placement-for-Variables）" class="headerlink" title="二. 根据参数放置设备（Device placement for Variables）"></a>二. 根据参数放置设备（Device placement for Variables）</h3><p>tensorflow有一个神奇的设备函数。我们可以不用把设备字符串传给tf.device，我们可以使用设备函数。我们可以用不同的设备函数来创建更多更加巧妙强大的放置策略。tensorflow已经提供了一些写好的设备函数可以很方便地调用。</p>
+<h4 id="Round-robin-variables"><a href="#Round-robin-variables" class="headerlink" title="Round-robin variables"></a>Round-robin variables</h4><p>最简单的一个方法叫<code>tf_train_replica_device_setter</code>方法，它会循环地分配变量，就像创建PS的时候。这个设备函数的优点是，你可以把整个模型建模代码用这个模块包起来。它只影响变量，把它们放在PS任务中，而其他的工作会自动到worker中执行。</p>
+<p>这边有一段示例程序展示如何使用，如下图所示，这个程序会把第一个weight权重变量被放在到PS task0，第一个bias偏置变量被放置到PS task1, 接下来第二个weight被放置到PS task2，最后一个回来放到task0中。<br><img src="/images/tensorflow/8.PNG" alt=""></p>
+<center>图7</center>
+
+<p>这明显不是一个最优的平衡负载放置策略。显然可以有更好的策略可以做得更好，所以tensorflow提供有另一个注重负载平衡的放置策略。</p>
+<h4 id="Load-balancing-variables"><a href="#Load-balancing-variables" class="headerlink" title="Load balancing variables"></a>Load balancing variables</h4><p>有一个简单的贪婪策略叫<code>GreedyLoadBalancingStrategy</code>, 它可以根据参数的内存字节来完成类似在线垃圾收集的工作。根据weight和bias的字节数来放置到内存合适的task中，带来更好的负载平衡。<br><img src="/images/tensorflow/9.PNG" alt=""></p>
+<center>图8</center>
+
+<h4 id="Partitioned-variables"><a href="#Partitioned-variables" class="headerlink" title="Partitioned variables"></a>Partitioned variables</h4><p>以上讨论的都是很小字节的参数，每个PS task都可以单独处理一个变量。但当遇到超大字节，比如可能是几万MB的数据该如何处理？要解决这个问题，提出一个分割变量的方法。假设你用分隔符创建了一个变量，tensorflow会把这个变量分割成3个部分，分发到3个PS task中。<br><img src="/images/tensorflow/10.PNG" alt=""></p>
+<center>图9</center>
+
+<h3 id="三-进程和主服务（Session-and-Servers）"><a href="#三-进程和主服务（Session-and-Servers）" class="headerlink" title="三. 进程和主服务（Session and Servers）"></a>三. 进程和主服务（Session and Servers）</h3><p>当我们完成了资源配置后，我们就要开始继续run一个tensorflow的session了。如果你使用以下的代码来运行一个tensorflow的session, <code>tf.Session</code>只能知道本地机器的资源设备。<br><img src="/images/tensorflow/11.PNG" alt=""></p>
+<center>图10</center>
+
+<p>这时候，手头上还有200多台机器想利用起来，该怎么用呢？<br>答案就是，在每一台机器上起一个<code>tf.train.Server</code>的服务，然后放在一个集群里，整个集群的server会通过网络通信。<br><img src="/images/tensorflow/12.PNG" alt=""></p>
+<center>图11</center>
+
+<p>详细看一下如何用代码实现一个worker task。</p>
+<ol>
+<li>定义一个<code>ClusterSpec</code>, 用于定义一个集群中的PS， worker分别对应的是哪些机器。这样手动输入很容易出错，所以我们还可以用kubernetes或Mesos这些集群管理框架来管理。后面会出一篇tensorflow on k8s的文章；</li>
+<li>然后创建一个<code>tensorflow Server</code>，它代表集群里的一个特定任务</li>
+<li>最后创建一个<code>Session</code>，一个<code>session</code>可以在集群中的任何一个设备上运行代码。<br><img src="/images/tensorflow/13.PNG" alt=""><center>图12</center>
+
+</li>
+</ol>
+<p>PS task的代码更加简单，下面这个例子中，PS task只是block在那儿，等待其他Worker节点发给他们的图，步骤也很简单：</p>
+<ol>
+<li>定义一个<code>ClusterSpec</code>；</li>
+<li>然后创建一个<code>tensorflow Server</code>，它代表集群里的一个特定任务</li>
+<li>最后<code>server.join()</code><br><img src="/images/tensorflow/14.PNG" alt=""><center>图13</center>
+
+</li>
+</ol>
+<p>这个<code>server.join()</code>是什么意思？join的代码只有10～15行c++代码，做一些错误检查，并且jion一些线程，所以叫做join。它的作用就是block在那里，等待集群中其他节点的接入。</p>
+<h3 id="四-容错性（Fault-tolerance）"><a href="#四-容错性（Fault-tolerance）" class="headerlink" title="四. 容错性（Fault tolerance）"></a>四. 容错性（Fault tolerance）</h3><h4 id="Saver"><a href="#Saver" class="headerlink" title="Saver"></a>Saver</h4><p>当完成了上面的步骤后，就结束了吗？当你在跑一个耗时很长的分布式training任务的时候，都会有这样的担忧，如<code>Leslie Lamport</code>说过的一句话：</p>
+<blockquote>
+<p>A distributed system is a system where I can’t get my work done because a compuer has failed that I’ve never heared of.</p>
+</blockquote>
+<p>机器总是不知为何就failed掉了，导致整个training不能成功。在长时间的训练任务中，我强烈推荐大家使用<code>saver</code>来不断把参数检查点存储到磁盘上。</p>
+<p>tensorflow的分布式功能中有几个点需要强调一下：<br><img src="/images/tensorflow/15.PNG" alt=""></p>
+<center>图14</center>
+
+<ol>
+<li><code>Saver</code>的<code>sharded</code>参数设置为<code>True</code>, 也就是设置分片数据。如上图所示，我们这个例子中有3个PS任务，所以分片为3份来并行写入。</li>
+<li>如果你使用的是图间复制，你可以选择一个或多个worker任务来回应写入要求。一般来说我们用woker task0来执行一些额为的任务，因为worker是从0开始计数，所以总有worker0存在。这个任务我们称为<code>chief task</code>， 主要负责一些重要的维护任务，比如写入检查点，初始化参数，以及在tensor board中记录一些总结。</li>
+<li><code>Saver</code>现在支持分布式文件系统，比如Google ML, 或者如果你跑在一个Hadoop集群上，你可以写入一个HDFS。</li>
+</ol>
+<h4 id="容错性"><a href="#容错性" class="headerlink" title="容错性"></a>容错性</h4><p>上面的Saver可以防止运行过程中出错，那么当不幸真的遇到了错误呢？</p>
+<p>遇到的错误可以分为以下几种：</p>
+<ol>
+<li><p>最好的情况就是<code>非Chief</code>的worker task出错了,因为这些task实际上是无状态的。那么当遇到了这种错误，当这样的一个worker task恢复的时候，它会重新与它的PS task中建立连接，并且重新开始之前崩溃过的进程。<br><img src="/images/tensorflow/16.PNG" alt=""></p>
+<center>图15</center>
+</li>
+<li><p>比较差的一种情况就是PS task失败了，那么就有一个麻烦，因为PS task是有状态的，所有的worker task需要依赖他们来发送他们的梯度并且取得新的参数值。所以这种情况下，他们的<code>chief worker task</code>负责监测这种错误，如果发生了这种错误，<code>chief worker task</code>就打断整个训练，并从上一个检查点恢复所有的PS tasks。<br><img src="/images/tensorflow/17.PNG" alt=""></p>
+<center>图16</center>
+</li>
+<li><p>最糟糕的情况就是<code>chief worker task</code>失败了，因为我们让它负责其他所有的任务，我们就要确保它失败了，能够让集群里所有的任务都回到一个很好的状态。所以我们做的就是打断训练，并在当它恢复了时候从上一个好的检查点恢复。这样的处理方式很简单，但也依赖于机器的健壮性。这里也抛出了一个想法，或许你可以使用一个配置比如Hadoop ZooKeeper 或Etcd来选举<code>chief worker task</code>而不是简单地定义为task0.<br><img src="/images/tensorflow/18.PNG" alt=""></p>
+<center>图17</center>
+
+</li>
+</ol>
+<h4 id="Fault-tolerance-的API"><a href="#Fault-tolerance-的API" class="headerlink" title="Fault tolerance 的API"></a>Fault tolerance 的API</h4><p>下面就来介绍一下<code>tensorflow</code>中的容错性一些API。</p>
+<ol>
+<li>MonitoredTrainingSession:</li>
+</ol>
+<p>首先，我们看一下单线程的代码是怎么写的，一般就是初始化参数，或从一个检查点恢复参数：<br><img src="/images/tensorflow/19.PNG" alt=""></p>
+<p>而使用了<code>MonitoredTrainingSession</code>的代码会自动帮你初始化参数，并且当PS 任务失败会自动恢复。<br><img src="/images/tensorflow/20.PNG" alt=""></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>分布式Tensorflow可以让你很灵活的去扩展你的训练，当你有很多CPU，GPU可以用的时候，当你有一个很巨大的模型要训练的时候，分布式tensorflow就会显得很灵活。</p>
+<h3 id="Further-reading"><a href="#Further-reading" class="headerlink" title="Further reading:"></a>Further reading:</h3><p><a href="https://tensorflow.org/extend/architecture" target="_blank" rel="external">https://tensorflow.org/extend/architecture</a><br><a href="https://tensorflow.org/deploy/distributed" target="_blank" rel="external">https://tensorflow.org/deploy/distributed</a><br><a href="https://tensorflow.org/extend/estimators" target="_blank" rel="external">https://tensorflow.org/extend/estimators</a></p>
+  
+	</div>
+		<footer class="article-footer clearfix">
+
+
+<div class="article-categories">
+  <span></span>
+  <a class="article-category-link" href="/categories/Machine-Learning/">Machine Learning</a>
+</div>
+
+
+
+<div class="article-share" id="share">
+
+  <div data-url="https://lynnapan.github.io/2017/09/04/distributed tensorflow/" data-title="分布式tensorflow（一） | Lynna&#39;s Blog" data-tsina="null" class="share clearfix">
+  </div>
+
+</div>
+</footer>   	       
+	</article>
+	
+<nav class="article-nav clearfix">
+ 
+ <div class="prev" >
+ <a href="/2017/09/28/tensorflow_basic1/" title="tensorflow 环境建立（Anaconda)">
+  <strong>PREVIOUS:</strong><br/>
+  <span>
+  tensorflow 环境建立（Anaconda)</span>
+</a>
+</div>
+
+
+<div class="next">
+<a href="/2017/08/20/ML/"  title="机器学习笔记（andrew ng） -- cost function and gradient descent">
+ <strong>NEXT:</strong><br/> 
+ <span>机器学习笔记（andrew ng） -- cost function and gradient descent
+</span>
+</a>
+</div>
+
+</nav>
+
+	
+<section class="comment">
+	
+	<div class="ds-thread" data-title="分布式tensorflow（一）" data-thread-key="distributed tensorflow" data-author-key="Lina Pan(panlina_lynna@outlook.com)" data-url="https://lynnapan.github.io/post/distributed tensorflow"></div>
+	
+</section>
+
+
+</div>  
+      <div class="openaside"><a class="navbutton" href="#" title="Show Sidebar"></a></div>
+
+  <div id="toc" class="toc-aside">
+  <strong class="toc-title">Contents</strong>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#分布式tensorflow的主要概念"><span class="toc-number">2.</span> <span class="toc-text">分布式tensorflow的主要概念</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#分布式资源放置管理"><span class="toc-number">3.</span> <span class="toc-text">分布式资源放置管理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#一-模型复制（replicating）"><span class="toc-number">3.1.</span> <span class="toc-text">一. 模型复制（replicating）</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#In-graph-replication"><span class="toc-number">3.1.1.</span> <span class="toc-text">In-graph replication</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Between-graph-replication"><span class="toc-number">3.1.2.</span> <span class="toc-text">Between-graph replication</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#二-根据参数放置设备（Device-placement-for-Variables）"><span class="toc-number">3.2.</span> <span class="toc-text">二. 根据参数放置设备（Device placement for Variables）</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Round-robin-variables"><span class="toc-number">3.2.1.</span> <span class="toc-text">Round-robin variables</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Load-balancing-variables"><span class="toc-number">3.2.2.</span> <span class="toc-text">Load balancing variables</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Partitioned-variables"><span class="toc-number">3.2.3.</span> <span class="toc-text">Partitioned variables</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#三-进程和主服务（Session-and-Servers）"><span class="toc-number">3.3.</span> <span class="toc-text">三. 进程和主服务（Session and Servers）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#四-容错性（Fault-tolerance）"><span class="toc-number">3.4.</span> <span class="toc-text">四. 容错性（Fault tolerance）</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Saver"><span class="toc-number">3.4.1.</span> <span class="toc-text">Saver</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#容错性"><span class="toc-number">3.4.2.</span> <span class="toc-text">容错性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Fault-tolerance-的API"><span class="toc-number">3.4.3.</span> <span class="toc-text">Fault tolerance 的API</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#总结"><span class="toc-number">4.</span> <span class="toc-text">总结</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Further-reading"><span class="toc-number">4.1.</span> <span class="toc-text">Further reading:</span></a></li></ol></li></ol>
+  </div>
+
+<div id="asidepart">
+<div class="closeaside"><a class="closebutton" href="#" title="Hide Sidebar"></a></div>
+<aside class="clearfix">
+<div id="authorInfo">
+	
+		<div class="author-logo"></div>		
+	
+	<div class="social-list" class="clearfix">
+		
+		<a href="http://weibo.com/1912518851" target="_blank" title="weibo"></a>
+		
+		
+		
+		<a href="https://github.com/LynnaPan" target="_blank" title="github"></a>
+		
+		
+		
+	</div>
+</div>
+
+  
+<div class="categorieslist">
+	<p class="asidetitle">Categories</p>
+		<ul>
+		
+			<li><a href="/categories/C/" title="C">C<sup>2</sup></a></li>
+		
+			<li><a href="/categories/Data-Center/" title="Data Center">Data Center<sup>4</sup></a></li>
+		
+			<li><a href="/categories/Machine-Learning/" title="Machine Learning">Machine Learning<sup>4</sup></a></li>
+		
+			<li><a href="/categories/Python/" title="Python">Python<sup>1</sup></a></li>
+		
+			<li><a href="/categories/Web/" title="Web">Web<sup>1</sup></a></li>
+		
+			<li><a href="/categories/docker/" title="docker">docker<sup>1</sup></a></li>
+		
+			<li><a href="/categories/mssql-数据库/" title="mssql 数据库">mssql 数据库<sup>1</sup></a></li>
+		
+		</ul>
+</div>
+
+
+  
+
+  <div class="linkslist">
+  <p class="asidetitle">Links</p>
+    <ul>
+      <li><a href="http://julyhou24.org/" target="_blank" title="Hexo">一本正经地胡说八道</a></li>
+    </ul>
+</div>
+
+
+  <div class="rsspart">
+	<a href="atom.xml" target="_blank" title="rss">RSS</a>
+</div>
+
+  
+
+</aside>
+</div>
+    </div>
+    <footer><div id="footer" >
+    
+            <p class="copyright"> © 2017 
+		
+		<a href="https://lynnapan.github.io" target="_blank" title="Lina Pan(panlina_lynna@outlook.com)">Lina Pan(panlina_lynna@outlook.com)</a>
+		
+            && Powered by <a href="http://hexo.io" target="_blank" title="hexo">hexo</a> && Theme by <a href="http://gengbiao.me" target="_blank" title="coney">coney</a>
+            </div>
+</footer>
+    <script src="/js/jquery-2.1.0.min.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){ 
+  $('.navbar').click(function(){
+    $('header nav').toggleClass('shownav');
+  });
+  var myWidth = 0;
+  function getSize(){
+    if( typeof( window.innerWidth ) == 'number' ) {
+      myWidth = window.innerWidth;
+    } else if( document.documentElement && document.documentElement.clientWidth) {
+      myWidth = document.documentElement.clientWidth;
+    };
+  };
+  var m = $('#main'),
+      a = $('#asidepart'),
+      c = $('.closeaside'),
+      o = $('.openaside');
+  $(window).resize(function(){
+    getSize(); 
+    if (myWidth >= 1024) {
+      $('header nav').removeClass('shownav');
+    }else
+    {
+      m.removeClass('moveMain');
+      a.css('display', 'block').removeClass('fadeOut');
+      o.css('display', 'none');
+      
+      $('#toc.toc-aside').css('display', 'none');
+        
+    }
+  });
+  c.click(function(){
+    a.addClass('fadeOut').css('display', 'none');
+    o.css('display', 'block').addClass('fadeIn');
+    m.addClass('moveMain');
+  });
+  o.click(function(){
+    o.css('display', 'none').removeClass('beforeFadeIn');
+    a.css('display', 'block').removeClass('fadeOut').addClass('fadeIn');      
+    m.removeClass('moveMain');
+  });
+  $(window).scroll(function(){
+    o.css("top",Math.max(80,260-$(this).scrollTop()));
+  });
+});
+</script>
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  var ai = $('.article-content>iframe'),
+      ae = $('.article-content>embed'),
+      t  = $('#toc'),
+      h  = $('article h2')
+      ah = $('article h2'),
+      ta = $('#toc.toc-aside'),
+      o  = $('.openaside'),
+      c  = $('.closeaside');
+  if(ai.length>0){
+    ai.wrap('<div class="video-container" />');
+  };
+  if(ae.length>0){
+   ae.wrap('<div class="video-container" />');
+  };
+  if(ah.length==0){
+    t.css('display','none');
+  }else{
+    c.click(function(){
+      ta.css('display', 'block').addClass('fadeIn');
+    });
+    o.click(function(){
+      ta.css('display', 'none');
+    });
+    $(window).scroll(function(){
+      ta.css("top",Math.max(140,320-$(this).scrollTop()));
+    });
+  };
+});
+</script>
+
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  var $this = $('.share'),
+      url = $this.attr('data-url'),
+      encodedUrl = encodeURIComponent(url),
+      title = $this.attr('data-title'),
+      tsina = $this.attr('data-tsina');
+  var html = [
+  '<a href="#" class="overlay" id="qrcode"></a>',
+  '<div class="qrcode clearfix"><span>扫描二维码分享到微信朋友圈</span><a class="qrclose" href="#share"></a><strong>Loading...Please wait</strong><img id="qrcode-pic" data-src="http://s.jiathis.com/qrcode.php?url=' + encodedUrl + '"/></div>',
+  '<a href="#textlogo" class="article-back-to-top" title="Top"></a>',
+  '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="article-share-facebook" target="_blank" title="Facebook"></a>',
+  '<a href="#qrcode" class="article-share-qrcode" title="QRcode"></a>',
+  '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="article-share-twitter" target="_blank" title="Twitter"></a>',
+  '<a href="http://service.weibo.com/share/share.php?title='+title+'&url='+encodedUrl +'&ralateUid='+ tsina +'&searchPic=true&style=number' +'" class="article-share-weibo" target="_blank" title="Weibo"></a>',
+  '<span title="Share to"></span>'
+  ].join('');
+  $this.append(html);
+  $('.article-share-qrcode').click(function(){
+    var imgSrc = $('#qrcode-pic').attr('data-src');
+    $('#qrcode-pic').attr('src', imgSrc);
+    $('#qrcode-pic').load(function(){
+        $('.qrcode strong').text(' ');
+    });
+  });
+});     
+</script>
+
+
+<script type="text/javascript">
+  var duoshuoQuery = {short_name:"null"};
+  (function() {
+    var ds = document.createElement('script');
+    ds.type = 'text/javascript';ds.async = true;
+    ds.src = '//static.duoshuo.com/embed.js';
+    ds.charset = 'UTF-8';
+    (document.getElementsByTagName('head')[0] 
+    || document.getElementsByTagName('body')[0]).appendChild(ds);
+  })();
+</script> 
+
+
+
+
+
+
+<script>
+    
+        var _bdImg = '4';
+    
+    window._bd_share_config={
+        "common":{
+            "bdSnsKey":{
+
+            },
+            "bdText":"",
+            "bdMini":"2",
+            "bdMiniList":[
+                "qzone",
+                "tsina",
+                "weixin",
+                "renren",
+                "tqq",
+                "tieba",
+                "douban",
+                "sqq",
+                "diandian",
+                "huaban",
+                "youdao",
+                "mail",
+                "ty",
+                "fbook",
+                "twi",
+                "linkedin",
+                "copy",
+                "print"
+            ],
+            "bdPic":"",
+            "bdStyle":"0",
+            "bdSize":"16"
+        },
+        "slide":{
+            "type":"slide",
+            "bdImg":_bdImg,
+            "bdPos":"right",
+            "bdTop":"350"
+        },
+        "image":{
+            "viewList":[
+                "weixin",
+                "qzone",
+                "tsina",
+                "renren",
+                "douban",
+                "tqq"
+            ],
+            "viewText":"分享：",
+            "viewSize":"16"
+        },
+        "selectShare":{
+            "bdContainerClass":null,
+            "bdSelectMiniList":[
+                "weixin",
+                "qzone",
+                "tsina",
+                "renren",
+                "douban",
+                "tqq"
+            ]
+        }
+    };
+    with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];
+</script>
+
+
+
+
+<script type="text/javascript">
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+ga('create', 'null', 'null');  
+ga('send', 'pageview');
+</script>
+
+
+  </body>
+</html>
+

@@ -44,7 +44,7 @@
 				<h1 class="site-name"><a href="/" title="Lynna&#39;s Blog">Lynna&#39;s Blog</a></h1>
 				<a class="blog-motto">怕什么真理无穷， 进一寸有一寸的欢喜</a>
 			</div>
-			<div class="navbar"><a class="navbutton navmobile" href="#" title="Menu">
+			<div class="navbar"><a class="navbutton navmobile" href="#" title="菜单">
 			</a></div>
 			<nav class="animated">
 				<ul>
@@ -58,7 +58,7 @@
 					
                                             <form class="search" action=https://lynnapan.github.io/ target="_blank">
                                             <label>Search</label>
-                                        <input name="s" type="hidden" value= null ><input type="text" name="q" size="30" placeholder="Search"><br>
+                                        <input name="s" type="hidden" value= null ><input type="text" name="q" size="30" placeholder="搜索"><br>
 					
 					</li>
 				</ul>
@@ -80,7 +80,7 @@
     </p>
   <p class="article-time">
     <time datetime="2017-07-14T03:54:53.000Z" itemprop="datePublished">2017-07-14</time>
-    Updated:<time datetime="2017-08-20T12:11:35.000Z" itemprop="dateModified">2017-08-20</time>
+    更新日期:<time datetime="2017-08-20T12:11:35.000Z" itemprop="dateModified">2017-08-20</time>
     
   </p>
 </header>
@@ -88,7 +88,7 @@
 		
 		
 		<div id="toc" class="toc-article">
-			<strong class="toc-title">Contents</strong>
+			<strong class="toc-title">文章目录</strong>
 		<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#redis主要的数据结构"><span class="toc-number">1.</span> <span class="toc-text">redis主要的数据结构</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#一-简单动态字符串"><span class="toc-number">1.0.1.</span> <span class="toc-text">一. 简单动态字符串</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-1-什么是简单动态字符串？"><span class="toc-number">1.0.1.1.</span> <span class="toc-text">1.1 什么是简单动态字符串？</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-2-SDS相对C字符串的好处？"><span class="toc-number">1.0.1.2.</span> <span class="toc-text">1.2 SDS相对C字符串的好处？</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#获取字符串长度复杂度为O-1"><span class="toc-number">1.0.1.2.1.</span> <span class="toc-text">获取字符串长度复杂度为O(1)</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#防止缓冲区溢出-buffer-overflow"><span class="toc-number">1.0.1.2.2.</span> <span class="toc-text">防止缓冲区溢出(buffer overflow)</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#减少因修改字符串带来的内存重分配次数"><span class="toc-number">1.0.1.2.3.</span> <span class="toc-text">减少因修改字符串带来的内存重分配次数</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#可以存放二进制数据"><span class="toc-number">1.0.1.2.4.</span> <span class="toc-text">可以存放二进制数据</span></a></li></ol></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#总结-划重点"><span class="toc-number">1.0.2.</span> <span class="toc-text">总结(划重点)</span></a></li></ol></li></ol></li></ol>
 		</div>
 		
@@ -144,7 +144,7 @@
 <li>键值对的键是一个字符串对象， 对象的底层实现是一个保存着字符串 “msg” 的 SDS 。</li>
 <li>键值对的值也是一个字符串对象， 对象的底层实现是一个保存着字符串 “hello world” 的 SDS 。</li>
 </ul>
-<p>那么为什么要采用SDS呢，有什么好处？<br>sds.h中找到了sdshdr的结构体：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/* Note: sdshdr5 is never used, we just access the flags byte directly.</span></div><div class="line"> * However is here to document the layout of type 5 SDS strings. */</div><div class="line"><span class="keyword">struct</span> <span class="number">__</span>attribute__ ((<span class="number">__</span>packed__)) sdshdr5 &#123;</div><div class="line">    <span class="keyword">unsigned</span> <span class="keyword">char</span> flags; <span class="comment">/* 3 lsb of type, and 5 msb of string length */</span></div><div class="line">    <span class="keyword">char</span> buf[];</div><div class="line">&#125;;</div><div class="line"><span class="keyword">struct</span> <span class="number">__</span>attribute__ ((<span class="number">__</span>packed__)) sdshdr8 &#123;</div><div class="line">    <span class="keyword">uint8_t</span> len; <span class="comment">/* used */</span></div><div class="line">    <span class="keyword">uint8_t</span> alloc; <span class="comment">/* excluding the header and null terminator */</span></div><div class="line">    <span class="keyword">unsigned</span> <span class="keyword">char</span> flags; <span class="comment">/* 3 lsb of type, 5 unused bits */</span></div><div class="line">    <span class="keyword">char</span> buf[];</div><div class="line">&#125;;</div><div class="line"><span class="keyword">struct</span> <span class="number">__</span>attribute__ ((<span class="number">__</span>packed__)) sdshdr16 &#123;</div><div class="line">    <span class="keyword">uint16_t</span> len; <span class="comment">/* used */</span></div><div class="line">    <span class="keyword">uint16_t</span> alloc; <span class="comment">/* excluding the header and null terminator */</span></div><div class="line">    <span class="keyword">unsigned</span> <span class="keyword">char</span> flags; <span class="comment">/* 3 lsb of type, 5 unused bits */</span></div><div class="line">    <span class="keyword">char</span> buf[];</div><div class="line">&#125;;</div><div class="line"><span class="keyword">struct</span> <span class="number">__</span>attribute__ ((<span class="number">__</span>packed__)) sdshdr32 &#123;</div><div class="line">    <span class="keyword">uint32_t</span> len; <span class="comment">/* used */</span></div><div class="line">    <span class="keyword">uint32_t</span> alloc; <span class="comment">/* excluding the header and null terminator */</span></div><div class="line">    <span class="keyword">unsigned</span> <span class="keyword">char</span> flags; <span class="comment">/* 3 lsb of type, 5 unused bits */</span></div><div class="line">    <span class="keyword">char</span> buf[];</div><div class="line">&#125;;</div><div class="line"><span class="keyword">struct</span> <span class="number">__</span>attribute__ ((<span class="number">__</span>packed__)) sdshdr64 &#123;</div><div class="line">    <span class="comment">//记录buf数组中已使用的字节数量</span></div><div class="line">    <span class="keyword">uint64_t</span> len; </div><div class="line">    <span class="comment">//分配的buf数组长度，不包括头和空字符结尾 </span></div><div class="line">    <span class="keyword">uint64_t</span> alloc;</div><div class="line">    <span class="comment">// 标志位， 最低3位表示类型，另外5个位没有使用</span></div><div class="line">    <span class="keyword">unsigned</span> <span class="keyword">char</span> flags; </div><div class="line">    <span class="keyword">char</span> buf[];</div><div class="line">&#125;;</div></pre></td></tr></table></figure></p>
+<p>那么为什么要采用SDS呢，有什么好处？<br>sds.h中找到了sdshdr的结构体：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/* <span class="doctag">Note:</span> sdshdr5 is never used, we just access the flags byte directly.</span></div><div class="line"> * However is here to document the layout of type 5 SDS strings. */</div><div class="line"><span class="keyword">struct</span> <span class="number">__</span>attribute__ ((<span class="number">__</span>packed__)) sdshdr5 &#123;</div><div class="line">    <span class="keyword">unsigned</span> <span class="keyword">char</span> flags; <span class="comment">/* 3 lsb of type, and 5 msb of string length */</span></div><div class="line">    <span class="keyword">char</span> buf[];</div><div class="line">&#125;;</div><div class="line"><span class="keyword">struct</span> <span class="number">__</span>attribute__ ((<span class="number">__</span>packed__)) sdshdr8 &#123;</div><div class="line">    <span class="keyword">uint8_t</span> len; <span class="comment">/* used */</span></div><div class="line">    <span class="keyword">uint8_t</span> alloc; <span class="comment">/* excluding the header and null terminator */</span></div><div class="line">    <span class="keyword">unsigned</span> <span class="keyword">char</span> flags; <span class="comment">/* 3 lsb of type, 5 unused bits */</span></div><div class="line">    <span class="keyword">char</span> buf[];</div><div class="line">&#125;;</div><div class="line"><span class="keyword">struct</span> <span class="number">__</span>attribute__ ((<span class="number">__</span>packed__)) sdshdr16 &#123;</div><div class="line">    <span class="keyword">uint16_t</span> len; <span class="comment">/* used */</span></div><div class="line">    <span class="keyword">uint16_t</span> alloc; <span class="comment">/* excluding the header and null terminator */</span></div><div class="line">    <span class="keyword">unsigned</span> <span class="keyword">char</span> flags; <span class="comment">/* 3 lsb of type, 5 unused bits */</span></div><div class="line">    <span class="keyword">char</span> buf[];</div><div class="line">&#125;;</div><div class="line"><span class="keyword">struct</span> <span class="number">__</span>attribute__ ((<span class="number">__</span>packed__)) sdshdr32 &#123;</div><div class="line">    <span class="keyword">uint32_t</span> len; <span class="comment">/* used */</span></div><div class="line">    <span class="keyword">uint32_t</span> alloc; <span class="comment">/* excluding the header and null terminator */</span></div><div class="line">    <span class="keyword">unsigned</span> <span class="keyword">char</span> flags; <span class="comment">/* 3 lsb of type, 5 unused bits */</span></div><div class="line">    <span class="keyword">char</span> buf[];</div><div class="line">&#125;;</div><div class="line"><span class="keyword">struct</span> <span class="number">__</span>attribute__ ((<span class="number">__</span>packed__)) sdshdr64 &#123;</div><div class="line">    <span class="comment">//记录buf数组中已使用的字节数量</span></div><div class="line">    <span class="keyword">uint64_t</span> len; </div><div class="line">    <span class="comment">//分配的buf数组长度，不包括头和空字符结尾 </span></div><div class="line">    <span class="keyword">uint64_t</span> alloc;</div><div class="line">    <span class="comment">// 标志位， 最低3位表示类型，另外5个位没有使用</span></div><div class="line">    <span class="keyword">unsigned</span> <span class="keyword">char</span> flags; </div><div class="line">    <span class="keyword">char</span> buf[];</div><div class="line">&#125;;</div></pre></td></tr></table></figure></p>
 <p>通过代码可以看出SDS有5中header类型，之所以要定义不同的类型，是为了让不同的字符串使用不同长度的header，从而节省内存。</p>
 <p>SDS结构体的的组成有:</p>
 <ol>
@@ -269,15 +269,15 @@
 
 
 </div>  
-      <div class="openaside"><a class="navbutton" href="#" title="Show Sidebar"></a></div>
+      <div class="openaside"><a class="navbutton" href="#" title="显示侧边栏"></a></div>
 
   <div id="toc" class="toc-aside">
-  <strong class="toc-title">Contents</strong>
+  <strong class="toc-title">文章目录</strong>
   <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#redis主要的数据结构"><span class="toc-number">1.</span> <span class="toc-text">redis主要的数据结构</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#一-简单动态字符串"><span class="toc-number">1.0.1.</span> <span class="toc-text">一. 简单动态字符串</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-1-什么是简单动态字符串？"><span class="toc-number">1.0.1.1.</span> <span class="toc-text">1.1 什么是简单动态字符串？</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-2-SDS相对C字符串的好处？"><span class="toc-number">1.0.1.2.</span> <span class="toc-text">1.2 SDS相对C字符串的好处？</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#获取字符串长度复杂度为O-1"><span class="toc-number">1.0.1.2.1.</span> <span class="toc-text">获取字符串长度复杂度为O(1)</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#防止缓冲区溢出-buffer-overflow"><span class="toc-number">1.0.1.2.2.</span> <span class="toc-text">防止缓冲区溢出(buffer overflow)</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#减少因修改字符串带来的内存重分配次数"><span class="toc-number">1.0.1.2.3.</span> <span class="toc-text">减少因修改字符串带来的内存重分配次数</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#可以存放二进制数据"><span class="toc-number">1.0.1.2.4.</span> <span class="toc-text">可以存放二进制数据</span></a></li></ol></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#总结-划重点"><span class="toc-number">1.0.2.</span> <span class="toc-text">总结(划重点)</span></a></li></ol></li></ol></li></ol>
   </div>
 
 <div id="asidepart">
-<div class="closeaside"><a class="closebutton" href="#" title="Hide Sidebar"></a></div>
+<div class="closeaside"><a class="closebutton" href="#" title="隐藏侧边栏"></a></div>
 <aside class="clearfix">
 <div id="authorInfo">
 	
@@ -298,7 +298,7 @@
 
   
 <div class="categorieslist">
-	<p class="asidetitle">Categories</p>
+	<p class="asidetitle">分类</p>
 		<ul>
 		
 			<li><a href="/categories/C/" title="C">C<sup>2</sup></a></li>
@@ -322,7 +322,7 @@
   
 
   <div class="linkslist">
-  <p class="asidetitle">Links</p>
+  <p class="asidetitle">友情链接</p>
     <ul>
       <li><a href="http://julyhou24.org/" target="_blank" title="Hexo">一本正经地胡说八道</a></li>
     </ul>
@@ -330,7 +330,7 @@
 
 
   <div class="rsspart">
-	<a href="atom.xml" target="_blank" title="rss">RSS</a>
+	<a href="atom.xml" target="_blank" title="rss">RSS 订阅</a>
 </div>
 
   

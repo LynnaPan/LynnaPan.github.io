@@ -7,14 +7,10 @@
   <meta name="360-site-verification" content="67fbcc5a67f4c65c057315b28fa0b2c8" />
 <meta name="google-site-verification" content="2GzxQ0VtXwTSUdmGm6DzcmhTzM_I9QmzCb_pzpMzD88" />
   
-    <title>SQL Cursor 游标的使用 | Lynna&#39;s Blog</title>
+    <title>计算机系统之————虚拟内存 | Lynna&#39;s Blog</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=3, minimum-scale=1">
     
     <meta name="author" content="Lina Pan(panlina_lynna@outlook.com)">
-    
-    <meta name="description" content="SQL Cursor 游标的使用这两天在做新老系统间的data migration，接触到sql的游标，记录总结一下。
-我们的需求是要求map多张表，并把计算结果分别更新到一张目标表中, 新旧系统要做A/B Testing, 所以当旧表有任何更新，比如新增，删除，改动， 都要更新到新表中。
-原本我选">
     
     
     
@@ -74,15 +70,15 @@
 		<header class="article-info clearfix">
   <h1 itemprop="name">
     
-      <a href="/2016/05/31/SQL Cursor 游标的使用/" title="SQL Cursor 游标的使用" itemprop="url">SQL Cursor 游标的使用</a>
+      <a href="/2018/03/17/virtual memory/" title="计算机系统之————虚拟内存" itemprop="url">计算机系统之————虚拟内存</a>
   </h1>
   <p class="article-author">By
     
       <a href="https://lynnapan.github.io" title="Lina Pan(panlina_lynna@outlook.com)">Lina Pan(panlina_lynna@outlook.com)</a>
     </p>
   <p class="article-time">
-    <time datetime="2016-05-31T13:54:53.000Z" itemprop="datePublished">2016-05-31</time>
-    Updated:<time datetime="2016-07-10T04:26:09.000Z" itemprop="dateModified">2016-07-10</time>
+    <time datetime="2018-03-17T13:30:53.000Z" itemprop="datePublished">2018-03-17</time>
+    Updated:<time datetime="2018-03-17T13:30:46.000Z" itemprop="dateModified">2018-03-17</time>
     
   </p>
 </header>
@@ -91,37 +87,24 @@
 		
 		<div id="toc" class="toc-article">
 			<strong class="toc-title">Contents</strong>
-		<ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#SQL-Cursor-游标的使用"><span class="toc-number">1.</span> <span class="toc-text">SQL Cursor 游标的使用</span></a></li></ol>
+		
 		</div>
 		
-		<h2 id="SQL-Cursor-游标的使用"><a href="#SQL-Cursor-游标的使用" class="headerlink" title="SQL Cursor 游标的使用"></a>SQL Cursor 游标的使用</h2><p>这两天在做新老系统间的data migration，接触到sql的游标，记录总结一下。</p>
-<p>我们的需求是要求map多张表，并把计算结果分别更新到一张目标表中, 新旧系统要做A/B Testing, 所以当旧表有任何更新，比如新增，删除，改动， 都要更新到新表中。</p>
-<p>原本我选择的方案是采用批量Insert, 但碰到一个需要插入map关系的表， 其中一个field是另外一张表刚刚插入数据的id， 因此只能用循环来解决。 看了一圈SQL的for循环，实现起来略显费力。当然也有用<code>while do</code>或临时表等其他解决方案，欢迎发邮件探讨，这里分享一下游标的使用心得。</p>
-<p>以我的理解，可以把游标想象成一个指针，我们使用一个指针的时候需要做的事情：</p>
-<ul>
-<li>声明指针</li>
-<li>把指针指向一个地址</li>
-<li>获取指针内容</li>
-<li>移动指针指向新的地址</li>
-</ul>
-<p>这样理解起来游标就比较方便， 下面举个例子来说明游标的使用方法：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div></pre></td><td class="code"><pre><div class="line"><span class="comment">--声明一些后面需要用到的面临</span></div><div class="line"><span class="keyword">DECLARE</span> @vm_bucket_id <span class="built_in">bigint</span>, @<span class="keyword">group_id</span> <span class="built_in">bigint</span>, @<span class="keyword">name</span> <span class="built_in">varchar</span>(<span class="number">50</span>)</div><div class="line"><span class="comment">--声明游标 </span></div><div class="line"><span class="keyword">DECLARE</span> MyCursor <span class="keyword">CURSOR</span> </div><div class="line"><span class="comment">--查询出数据结果集合，游标将指向这个集合	 </span></div><div class="line"><span class="keyword">FOR</span> (<span class="keyword">SELECT</span> <span class="keyword">id</span>, <span class="keyword">group_id</span>, <span class="keyword">name</span> <span class="keyword">FROM</span> dbo.vm_bucket <span class="keyword">WHERE</span> <span class="keyword">id</span> <span class="keyword">NOT</span> <span class="keyword">IN</span>(</div><div class="line"><span class="keyword">SELECT</span> object_id <span class="keyword">from</span> dbo.resource_group_map <span class="keyword">where</span> <span class="keyword">object</span>=<span class="number">29</span>)) <span class="keyword">ORDER</span> <span class="keyword">BY</span> <span class="keyword">id</span> </div><div class="line"><span class="comment">--打开游标	</span></div><div class="line"><span class="keyword">OPEN</span> MyCursor 		</div><div class="line"><span class="comment">--从游标中取出内容放到声明好的变量中 </span></div><div class="line"><span class="keyword">FETCH</span> <span class="keyword">NEXT</span> <span class="keyword">FROM</span> MyCursor <span class="keyword">INTO</span> @vm_bucket_id, @<span class="keyword">group_id</span>, @<span class="keyword">name</span></div><div class="line"><span class="comment">--对取出的数据进行判断和处理</span></div><div class="line"><span class="keyword">WHILE</span> @@FETCH_STATUS = <span class="number">0</span></div><div class="line">		<span class="keyword">BEGIN</span></div><div class="line">			<span class="comment">--插入数据</span></div><div class="line">			<span class="keyword">INSERT</span> <span class="keyword">INTO</span> dbo.resource_group</div><div class="line">			(<span class="keyword">name</span>, <span class="keyword">group_id</span>, user_id, created_date)</div><div class="line">			<span class="keyword">VALUES</span> (@<span class="keyword">name</span>, @<span class="keyword">group_id</span>, <span class="number">0</span>, <span class="keyword">getutcdate</span>())</div><div class="line">		</div><div class="line">			<span class="comment">--把刚刚插入数据的id作为结果插入到另一张表</span></div><div class="line">			<span class="keyword">INSERT</span> <span class="keyword">INTO</span> dbo.resource_group_map</div><div class="line">			(resource_group_id, <span class="keyword">object</span>, object_id)</div><div class="line">			<span class="keyword">VALUES</span> (@@<span class="keyword">identity</span>, <span class="number">29</span>, @vm_bucket_id)</div><div class="line"></div><div class="line">			<span class="comment">--读取下一行</span></div><div class="line">			<span class="keyword">FETCH</span> <span class="keyword">NEXT</span> <span class="keyword">FROM</span> MyCursor <span class="keyword">INTO</span> @vm_bucket_id, @<span class="keyword">group_id</span>, @<span class="keyword">name</span></div><div class="line">		<span class="keyword">END</span></div><div class="line"><span class="comment">--关闭游标</span></div><div class="line"><span class="keyword">CLOSE</span> MyCursor</div><div class="line"><span class="comment">--释放游标</span></div><div class="line"><span class="keyword">DEALLOCATE</span> MyCursor</div></pre></td></tr></table></figure>
-<p><br><br><b>总结：</b> 游标是一种较易理解易读的程序写作模型，但如果使用不当，很容易扼杀性能，谨慎使用。</p>
-  
+		  
 	</div>
 		<footer class="article-footer clearfix">
 
 
 <div class="article-categories">
   <span></span>
-  <a class="article-category-link" href="/categories/mssql-数据库/">mssql 数据库</a>
+  <a class="article-category-link" href="/categories/计算机系统/">计算机系统</a>
 </div>
 
 
 
 <div class="article-share" id="share">
 
-  <div data-url="https://lynnapan.github.io/2016/05/31/SQL Cursor 游标的使用/" data-title="SQL Cursor 游标的使用 | Lynna&#39;s Blog" data-tsina="null" class="share clearfix">
+  <div data-url="https://lynnapan.github.io/2018/03/17/virtual memory/" data-title="计算机系统之————虚拟内存 | Lynna&#39;s Blog" data-tsina="null" class="share clearfix">
   </div>
 
 </div>
@@ -130,19 +113,11 @@
 	
 <nav class="article-nav clearfix">
  
- <div class="prev" >
- <a href="/2016/07/07/Web security principles/" title="Web security principles">
-  <strong>PREVIOUS:</strong><br/>
-  <span>
-  Web security principles</span>
-</a>
-</div>
-
 
 <div class="next">
-<a href="/2016/03/21/Docker Swarm和Kubernetes在大规模集群中的性能比较/"  title="Docker Swarm和Kubernetes在大规模集群中的性能比较">
+<a href="/2018/03/17/sort/"  title="经典排序算法">
  <strong>NEXT:</strong><br/> 
- <span>Docker Swarm和Kubernetes在大规模集群中的性能比较
+ <span>经典排序算法
 </span>
 </a>
 </div>
@@ -152,7 +127,7 @@
 	
 <section class="comment">
 	
-	<div class="ds-thread" data-title="SQL Cursor 游标的使用" data-thread-key="SQL Cursor 游标的使用" data-author-key="Lina Pan(panlina_lynna@outlook.com)" data-url="https://lynnapan.github.io/post/SQL Cursor 游标的使用"></div>
+	<div class="ds-thread" data-title="计算机系统之————虚拟内存" data-thread-key="virtual memory" data-author-key="Lina Pan(panlina_lynna@outlook.com)" data-url="https://lynnapan.github.io/post/virtual memory"></div>
 	
 </section>
 
@@ -162,7 +137,7 @@
 
   <div id="toc" class="toc-aside">
   <strong class="toc-title">Contents</strong>
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#SQL-Cursor-游标的使用"><span class="toc-number">1.</span> <span class="toc-text">SQL Cursor 游标的使用</span></a></li></ol>
+  
   </div>
 
 <div id="asidepart">

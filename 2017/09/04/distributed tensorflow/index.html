@@ -47,7 +47,7 @@ Tensor：中文名可以称为“张量”，其本质就是任意">
 				<h1 class="site-name"><a href="/" title="Lynna&#39;s Blog">Lynna&#39;s Blog</a></h1>
 				<a class="blog-motto">怕什么真理无穷， 进一寸有一寸的欢喜</a>
 			</div>
-			<div class="navbar"><a class="navbutton navmobile" href="#" title="Menu">
+			<div class="navbar"><a class="navbutton navmobile" href="#" title="菜單">
 			</a></div>
 			<nav class="animated">
 				<ul>
@@ -61,7 +61,7 @@ Tensor：中文名可以称为“张量”，其本质就是任意">
 					
                                             <form class="search" action=https://lynnapan.github.io/ target="_blank">
                                             <label>Search</label>
-                                        <input name="s" type="hidden" value= null ><input type="text" name="q" size="30" placeholder="Search"><br>
+                                        <input name="s" type="hidden" value= null ><input type="text" name="q" size="30" placeholder="搜索"><br>
 					
 					</li>
 				</ul>
@@ -83,7 +83,7 @@ Tensor：中文名可以称为“张量”，其本质就是任意">
     </p>
   <p class="article-time">
     <time datetime="2017-09-04T06:53:53.000Z" itemprop="datePublished">2017-09-04</time>
-    Updated:<time datetime="2017-09-26T12:45:13.000Z" itemprop="dateModified">2017-09-26</time>
+    更新日期:<time datetime="2017-09-26T12:45:13.000Z" itemprop="dateModified">2017-09-26</time>
     
   </p>
 </header>
@@ -91,7 +91,7 @@ Tensor：中文名可以称为“张量”，其本质就是任意">
 		
 		
 		<div id="toc" class="toc-article">
-			<strong class="toc-title">Contents</strong>
+			<strong class="toc-title">文章目錄</strong>
 		<ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#分布式tensorflow的主要概念"><span class="toc-number">2.</span> <span class="toc-text">分布式tensorflow的主要概念</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#分布式资源放置管理"><span class="toc-number">3.</span> <span class="toc-text">分布式资源放置管理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#一-模型复制（replicating）"><span class="toc-number">3.1.</span> <span class="toc-text">一. 模型复制（replicating）</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#In-graph-replication"><span class="toc-number">3.1.1.</span> <span class="toc-text">In-graph replication</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Between-graph-replication"><span class="toc-number">3.1.2.</span> <span class="toc-text">Between-graph replication</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#二-根据参数放置设备（Device-placement-for-Variables）"><span class="toc-number">3.2.</span> <span class="toc-text">二. 根据参数放置设备（Device placement for Variables）</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Round-robin-variables"><span class="toc-number">3.2.1.</span> <span class="toc-text">Round-robin variables</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Load-balancing-variables"><span class="toc-number">3.2.2.</span> <span class="toc-text">Load balancing variables</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Partitioned-variables"><span class="toc-number">3.2.3.</span> <span class="toc-text">Partitioned variables</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#三-进程和主服务（Session-and-Servers）"><span class="toc-number">3.3.</span> <span class="toc-text">三. 进程和主服务（Session and Servers）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#四-容错性（Fault-tolerance）"><span class="toc-number">3.4.</span> <span class="toc-text">四. 容错性（Fault tolerance）</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Saver"><span class="toc-number">3.4.1.</span> <span class="toc-text">Saver</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#容错性"><span class="toc-number">3.4.2.</span> <span class="toc-text">容错性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Fault-tolerance-的API"><span class="toc-number">3.4.3.</span> <span class="toc-text">Fault tolerance 的API</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#总结"><span class="toc-number">4.</span> <span class="toc-text">总结</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Further-reading"><span class="toc-number">4.1.</span> <span class="toc-text">Further reading:</span></a></li></ol></li></ol>
 		</div>
 		
@@ -283,15 +283,15 @@ Tensor：中文名可以称为“张量”，其本质就是任意">
 
 
 </div>  
-      <div class="openaside"><a class="navbutton" href="#" title="Show Sidebar"></a></div>
+      <div class="openaside"><a class="navbutton" href="#" title="顯示側邊欄"></a></div>
 
   <div id="toc" class="toc-aside">
-  <strong class="toc-title">Contents</strong>
+  <strong class="toc-title">文章目錄</strong>
   <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#分布式tensorflow的主要概念"><span class="toc-number">2.</span> <span class="toc-text">分布式tensorflow的主要概念</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#分布式资源放置管理"><span class="toc-number">3.</span> <span class="toc-text">分布式资源放置管理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#一-模型复制（replicating）"><span class="toc-number">3.1.</span> <span class="toc-text">一. 模型复制（replicating）</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#In-graph-replication"><span class="toc-number">3.1.1.</span> <span class="toc-text">In-graph replication</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Between-graph-replication"><span class="toc-number">3.1.2.</span> <span class="toc-text">Between-graph replication</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#二-根据参数放置设备（Device-placement-for-Variables）"><span class="toc-number">3.2.</span> <span class="toc-text">二. 根据参数放置设备（Device placement for Variables）</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Round-robin-variables"><span class="toc-number">3.2.1.</span> <span class="toc-text">Round-robin variables</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Load-balancing-variables"><span class="toc-number">3.2.2.</span> <span class="toc-text">Load balancing variables</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Partitioned-variables"><span class="toc-number">3.2.3.</span> <span class="toc-text">Partitioned variables</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#三-进程和主服务（Session-and-Servers）"><span class="toc-number">3.3.</span> <span class="toc-text">三. 进程和主服务（Session and Servers）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#四-容错性（Fault-tolerance）"><span class="toc-number">3.4.</span> <span class="toc-text">四. 容错性（Fault tolerance）</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Saver"><span class="toc-number">3.4.1.</span> <span class="toc-text">Saver</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#容错性"><span class="toc-number">3.4.2.</span> <span class="toc-text">容错性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Fault-tolerance-的API"><span class="toc-number">3.4.3.</span> <span class="toc-text">Fault tolerance 的API</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#总结"><span class="toc-number">4.</span> <span class="toc-text">总结</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Further-reading"><span class="toc-number">4.1.</span> <span class="toc-text">Further reading:</span></a></li></ol></li></ol>
   </div>
 
 <div id="asidepart">
-<div class="closeaside"><a class="closebutton" href="#" title="Hide Sidebar"></a></div>
+<div class="closeaside"><a class="closebutton" href="#" title="隱藏側邊欄"></a></div>
 <aside class="clearfix">
 <div id="authorInfo">
 	
@@ -312,7 +312,7 @@ Tensor：中文名可以称为“张量”，其本质就是任意">
 
   
 <div class="categorieslist">
-	<p class="asidetitle">Categories</p>
+	<p class="asidetitle">分類</p>
 		<ul>
 		
 			<li><a href="/categories/C/" title="C">C<sup>2</sup></a></li>
@@ -340,7 +340,7 @@ Tensor：中文名可以称为“张量”，其本质就是任意">
   
 
   <div class="linkslist">
-  <p class="asidetitle">Links</p>
+  <p class="asidetitle">友情鏈接</p>
     <ul>
       <li><a href="http://julyhou24.org/" target="_blank" title="Hexo">一本正经地胡说八道</a></li>
     </ul>
@@ -348,7 +348,7 @@ Tensor：中文名可以称为“张量”，其本质就是任意">
 
 
   <div class="rsspart">
-	<a href="atom.xml" target="_blank" title="rss">RSS</a>
+	<a href="atom.xml" target="_blank" title="rss">RSS 訂閱</a>
 </div>
 
   
